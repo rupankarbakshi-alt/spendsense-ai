@@ -1,0 +1,269 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user financial profile, income, monthly target, currency, and demo state.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name (1-60 chars)"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "currencyCode": {
+          "type": "string",
+          "enum": ["INR", "USD", "EUR", "GBP"],
+          "description": "Preferred display currency code"
+        },
+        "monthlyIncome": {
+          "type": "number",
+          "description": "User monthly income"
+        },
+        "monthlyBudgetTarget": {
+          "type": "number",
+          "description": "Overall monthly expenditure budget target"
+        },
+        "demoModeActive": {
+          "type": "boolean",
+          "description": "Whether labeled demo sample transactions are active"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on creation (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on update (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "email",
+        "currencyCode",
+        "monthlyIncome",
+        "monthlyBudgetTarget",
+        "demoModeActive",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Individual user expense transaction used for analytics, ML clustering, anomaly detection, and forecasting.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Expense title or item description (1-100 chars)"
+        },
+        "merchant": {
+          "type": "string",
+          "description": "Merchant or payee name (0-80 chars)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Positive transaction amount"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Food & Dining",
+            "Shopping",
+            "Transportation",
+            "Education",
+            "Entertainment",
+            "Healthcare",
+            "Bills & Utilities",
+            "Travel",
+            "Other"
+          ],
+          "description": "Expense category"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["UPI", "Card", "Cash", "Bank Transfer", "Wallet"],
+          "description": "Payment instrument"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes (0-300 chars)"
+        },
+        "dateEpochMillis": {
+          "type": "integer",
+          "description": "Transaction timestamp in epoch milliseconds"
+        },
+        "autoCategorized": {
+          "type": "boolean",
+          "description": "True if category was assigned automatically by classifier"
+        },
+        "demoRecord": {
+          "type": "boolean",
+          "description": "True if generated in labeled Demo Mode"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on creation (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on update (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "merchant",
+        "amount",
+        "category",
+        "paymentMethod",
+        "notes",
+        "dateEpochMillis",
+        "autoCategorized",
+        "demoRecord",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CategoryBudget": {
+      "title": "CategoryBudget",
+      "description": "Per-category monthly spending limit and alert threshold.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Food & Dining",
+            "Shopping",
+            "Transportation",
+            "Education",
+            "Entertainment",
+            "Healthcare",
+            "Bills & Utilities",
+            "Travel",
+            "Other"
+          ],
+          "description": "Expense category"
+        },
+        "monthlyLimit": {
+          "type": "number",
+          "description": "Monthly budget cap for this category"
+        },
+        "alertThresholdPct": {
+          "type": "integer",
+          "description": "Alert percentage threshold (50-100)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on creation (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on update (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "userId",
+        "category",
+        "monthlyLimit",
+        "alertThresholdPct",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CategoryRule": {
+      "title": "CategoryRule",
+      "description": "User-corrected keyword-to-category rule for adaptive smart categorization.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID"
+        },
+        "keyword": {
+          "type": "string",
+          "description": "Normalized lowercase merchant/keyword (1-60 chars)"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Food & Dining",
+            "Shopping",
+            "Transportation",
+            "Education",
+            "Entertainment",
+            "Healthcare",
+            "Bills & Utilities",
+            "Travel",
+            "Other"
+          ],
+          "description": "Target expense category"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on creation (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp on update (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "userId",
+        "keyword",
+        "category",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "User financial profile and settings isolated per authenticated user."
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": {
+        "$ref": "#/entities/Expense"
+      },
+      "description": "User expense transactions isolated under owner UID."
+    },
+    "/users/{userId}/budgets/{budgetId}": {
+      "schema": {
+        "$ref": "#/entities/CategoryBudget"
+      },
+      "description": "User category monthly budget caps."
+    },
+    "/users/{userId}/category_rules/{ruleId}": {
+      "schema": {
+        "$ref": "#/entities/CategoryRule"
+      },
+      "description": "User personalized category override rules learned from edits."
+    }
+  }
+}

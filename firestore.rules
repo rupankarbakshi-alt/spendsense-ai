@@ -1,0 +1,223 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidCategory(cat) {
+      return cat in [
+        'Food & Dining',
+        'Shopping',
+        'Transportation',
+        'Education',
+        'Entertainment',
+        'Healthcare',
+        'Bills & Utilities',
+        'Travel',
+        'Other'
+      ];
+    }
+
+    function isValidCurrency(curr) {
+      return curr in ['INR', 'USD', 'EUR', 'GBP'];
+    }
+
+    function isValidPaymentMethod(pm) {
+      return pm in ['UPI', 'Card', 'Cash', 'Bank Transfer', 'Wallet'];
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+             data.email is string && data.email.size() <= 120 &&
+             isValidCurrency(data.currencyCode) &&
+             (data.monthlyIncome is float || data.monthlyIncome is int) &&
+             data.monthlyIncome >= 0 && data.monthlyIncome <= 100000000 &&
+             (data.monthlyBudgetTarget is float || data.monthlyBudgetTarget is int) &&
+             data.monthlyBudgetTarget >= 0 && data.monthlyBudgetTarget <= 100000000 &&
+             data.demoModeActive is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidExpense(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.merchant is string && data.merchant.size() <= 80 &&
+             (data.amount is float || data.amount is int) &&
+             data.amount > 0 && data.amount <= 10000000 &&
+             isValidCategory(data.category) &&
+             isValidPaymentMethod(data.paymentMethod) &&
+             data.notes is string && data.notes.size() <= 300 &&
+             data.dateEpochMillis is int && data.dateEpochMillis > 0 &&
+             data.autoCategorized is bool &&
+             data.demoRecord is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidBudget(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             isValidCategory(data.category) &&
+             (data.monthlyLimit is float || data.monthlyLimit is int) &&
+             data.monthlyLimit >= 0 && data.monthlyLimit <= 10000000 &&
+             data.alertThresholdPct is int &&
+             data.alertThresholdPct >= 50 && data.alertThresholdPct <= 100 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCategoryRule(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.keyword is string && data.keyword.size() >= 1 && data.keyword.size() <= 60 &&
+             isValidCategory(data.category) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'email', 'currencyCode',
+                         'monthlyIncome', 'monthlyBudgetTarget', 'demoModeActive',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'email', 'currencyCode',
+                         'monthlyIncome', 'monthlyBudgetTarget', 'demoModeActive',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'email', 'currencyCode',
+                         'monthlyIncome', 'monthlyBudgetTarget', 'demoModeActive',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /expenses/{expenseId} {
+        allow get: if isOwner(userId) && isValidId(expenseId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(expenseId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'merchant', 'amount', 'category',
+                           'paymentMethod', 'notes', 'dateEpochMillis',
+                           'autoCategorized', 'demoRecord', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'merchant', 'amount', 'category',
+                           'paymentMethod', 'notes', 'dateEpochMillis',
+                           'autoCategorized', 'demoRecord', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidExpense(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(expenseId) &&
+                         isValidExpense(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'merchant', 'amount', 'category',
+                           'paymentMethod', 'notes', 'dateEpochMillis',
+                           'autoCategorized', 'demoRecord', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(expenseId);
+      }
+
+      match /budgets/{budgetId} {
+        allow get: if isOwner(userId) && isValidId(budgetId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(budgetId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'category', 'monthlyLimit', 'alertThresholdPct',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'category', 'monthlyLimit', 'alertThresholdPct',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidBudget(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(budgetId) &&
+                         isValidBudget(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'category', 'monthlyLimit', 'alertThresholdPct', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(budgetId);
+      }
+
+      match /category_rules/{ruleId} {
+        allow get: if isOwner(userId) && isValidId(ruleId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(ruleId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'keyword', 'category', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'keyword', 'category', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidCategoryRule(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(ruleId) &&
+                         isValidCategoryRule(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'keyword', 'category', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(ruleId);
+      }
+    }
+  }
+}

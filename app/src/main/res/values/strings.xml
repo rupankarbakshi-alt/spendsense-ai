@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SpendSense AI</string>
+    <string name="app_tagline">Understand Your Money. Control Your Future.</string>
+    <string name="sign_in_with_google">Continue with Google</string>
+    <string name="demo_mode_badge">DEMO MODE ACTIVE</string>
+    <string name="export_chooser_title">Export SpendSense AI Data</string>
+</resources>

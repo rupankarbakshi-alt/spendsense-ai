@@ -1,0 +1,6 @@
+{
+  "name": "SpendSense AI",
+  "description": "Understand Your Money. Control Your Future. An AI-powered personal finance and smart expense intelligence Android app featuring ML spending pattern clustering, anomaly detection, monthly expense forecasting, and personalized Gemini budget insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
